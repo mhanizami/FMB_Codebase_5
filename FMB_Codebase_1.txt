@@ -1,0 +1,68 @@
+#define _PWM_LOGLEVEL_       4
+
+#include "Teensy_PWM.h"
+#include "QuadEncoder.h"
+
+#define USING_FLEX_TIMERS      true // For PWM Library
+
+#define lMotorDirA 7
+#define lMotorDirB 8
+#define rMotorDirA 10
+#define rMotorDirB 11
+
+QuadEncoder lEncoder(1, 0, 1, 0); // 1 of 4, on pins 0 and 1 and no pullup
+QuadEncoder rEncoder(2, 2, 3, 0); // 2 of 4, on pins 2 and 3 and no pullup
+
+uint32_t PWM_Pins[] = {6, 9};
+
+volatile bool lMotorDirAValue = 1;
+volatile bool lMotorDirBValue = 0;
+volatile bool rMotorDirAValue = 1;
+volatile bool rMotorDirBValue = 0;
+volatile bool dummyTrig = 0;
+
+float frequency[]   = {2000.0f, 2000.0f};
+float dutyCycle[]   = {50.0f, 50.0f};
+
+volatile long lPosition  = -999;
+volatile long rPosition = -999;
+
+#define NUM_OF_PINS   ( sizeof(PWM_Pins) / sizeof(uint32_t) )
+
+Teensy_PWM* PWM_Instance[NUM_OF_PINS];
+
+void setup()
+{
+  Serial.begin(115200);
+
+  lEncoder.setInitConfig();
+  lEncoder.init();
+  rEncoder.setInitConfig();
+  rEncoder.init();
+
+  for (uint8_t index = 0; index < NUM_OF_PINS; index++)
+  {
+    PWM_Instance[index] = new Teensy_PWM(PWM_Pins[index], frequency[index], dutyCycle[index]);
+
+    if (PWM_Instance[index])
+    {
+      PWM_Instance[index]->setPWM();
+    }
+  }
+
+}
+
+void loop()
+{
+  digitalWrite(lMotorDirA,lMotorDirAValue);
+  digitalWrite(lMotorDirB,lMotorDirBValue);
+  digitalWrite(rMotorDirA,rMotorDirAValue);
+  digitalWrite(rMotorDirB,rMotorDirBValue);
+
+  lPosition = lEncoder.read();
+  rPosition = rEncoder.read();
+  Serial.print("Left Motor's Position: ");
+  Serial.print(lPosition);
+  Serial.print(" , Right Motor's Position: ");
+  Serial.println(rPosition);
+}
